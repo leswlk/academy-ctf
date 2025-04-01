@@ -1,5 +1,16 @@
-# academy-ctf
-# Summary
+```
+Alias: Academy
+Date: 3/31/2025
+Platform: Linux/Debian
+Category:
+Difficulty: Easy
+Tags:
+Status:
+Creds: root/tcm
+IP: 10.211.55.7/24, 10.211.55.8/24
+```
+
+# Resolution Summary
 - This is a technical walkthrough of the Academy machine from (HTB). This is a great box to practice scanning and enumeration techniques, reverse shell, and privilege escalation all wrapped into a CTF format.
 # Tools Used
 - dirbuster
@@ -112,11 +123,9 @@ I've set up a listener port on the attack machine using port 8080. Next, I will 
 Saved the changes, this script is going to run about every minute or so as root, going back to my attack machine.
 ![[AcademyFlag.jpg]]
 And there's the flag!
-
 # Trophy & Loot
 
 - user.txt
 - root.txt
 - "cd73502828457d15655bbd7a63fb0bc8:student"
 - 10201321/student
-- 
