@@ -71,43 +71,69 @@ It's also been noted that the "StudentRegno" number is what's use for login, whi
 
 ## FTP
 
-It's also been noted that the "StudentRegno" number is what's use for login, which means that the associated value for this would be "cd73502828457d15655bbd7a63fb0bc8". Seeing that this is a hash, I've used hashcat to identify what the password is. Value of hash equates to "student", which indicates a weak password policy.![[AcademyFTP.jpg]]
+It's also been noted that the "StudentRegno" number is what's use for login, which means that the associated value for this would be "cd73502828457d15655bbd7a63fb0bc8". Seeing that this is a hash, I've used hashcat to identify what the password is. Value of hash equates to "student", which indicates a weak password policy. 
+![AcademyFTP.jpg](images/AcademyFTP.jpg)
+
 Nmap scan shows anonymous login and a note.txt file. Simply choosing username as "Anonymous" logs me right in, entering the "get" command to transfer note.txt to my machine.
-![[Academynote.jpg]]
+![Academynote.jpg](images/Academynote.jpg) 
+
 Inside the file, it says "StudentRegno" is used for login. This is sensitive data. By matching database entries to values from the email, I now have a username—`10201321`—and a password that looks like a hash: `cd73502828457d15655bbd7a63fb0bc8`.
+
 ## Hash-Identifer / Hashcat
 Running Hash-Identifier identifies the string as an MD5 hash. I save the hash into `hashes.txt` and use hashcat to crack it.
-![[AcademyHashID.jpg]]
-Time to open 'hashes.txt'. Looks like the credentials are: `10201321/student`.![[AcademyHashcat.jpg]]
+![AcademyHashID.jpg](images/AcademyHashID.jpg) 
+
+Time to open 'hashes.txt'. Looks like the credentials are: `10201321/student`.
+![AcademyHashcat.jpg](images/AcademyHashcat.jpg)
+
 ## HTTP / FFUF
-Nmap shows a default webpage if I navigate to the address '10.211.55.7':![[AcademyApache.jpg]]
-Normally, I would use Gobuster for directory enumeration, but I’ve been experimenting with new tools, so for this machine, I use FFUF (Fuzz Faster U Fool).![[AcademyFFUF.jpg]]
+Nmap shows a default webpage if I navigate to the address '10.211.55.7':
+![[AcademyApache.jpg]](images/AcademyApache.jpg)
+
+Normally, I would use Gobuster for directory enumeration, but I’ve been experimenting with new tools, so for this machine, I use FFUF (Fuzz Faster U Fool).
+![[AcademyFFUF.jpg]](images/AcademyFFUF.jpg)
+
 I could check `http://10.211.55.7/phpmyadmin`, but I start at `http://10.211.55.7/academy`, given that the machine is named “Academy.” Could be a nice foothold.
 
 I land on the `academy` page and log in using the credentials from `note.txt`.
-![[AcademyLogin.jpg]]
-After clicking around, I found a "Profile" tab that allows users to upload their student photos. This could be an interesting vector. The form likely accepts `.jpeg` or `.png` images, but what if I upload something else—like a text file or script? Could I exploit the file upload feature? If so, I could use a reverse shell to gain access. Also, I've noticed this site uses PHP.![[AcademyReverseShell.jpg]]
+
+![[AcademyLogin.jpg]](images/AcademyLogin.jpg)
+
+After clicking around, I found a "Profile" tab that allows users to upload their student photos. This could be an interesting vector. The form likely accepts `.jpeg` or `.png` images, but what if I upload something else—like a text file or script? Could I exploit the file upload feature? If so, I could use a reverse shell to gain access. Also, I've noticed this site uses PHP.
+![[AcademyReverseShell.jpg]](images/AcademyReverseShell.jpg)
+
 ## Reverse Shell
 I grabbed a PHP reverse shell from pentestmonkey and configured it with my attack IP and port `7777`. By default, the port shows as '1234' but just to be a bit more conscious of the environment I've chosen a different number. Once the reverse shell is ready, I set up a listener on port `7777` on my attack machine, waiting for the connection.
-![[AcademyReverseShell 1.jpg]]
+
+
 Next, I visit the Academy site again and upload the PHP shell file.
-![[AcademyReverseShell2.jpg]]
+![[AcademyReverseShell2.jpg]](images/AcademyReverseShell2.jpg)
+
 Got a connection! But since I’m not root yet, I’ll need to escalate my privileges.
-![[AcademyLinpeas.jpg]]
+![[AcademyLinpeas.jpg]](images/AcademyLinpeas.jpg)
+
 ---
 # Privilege Escalation
+
 ## Privilege Escalation Vector
 
 Target is on Linux OS as noted earlier in the nmap scan, so I will use linPeas to search for any footholds available to perform privilege escalation. I downloaded the script from [https://github.com/peass-ng/PEASS-ng/tree/master/linPEAS](peass-ng) on my attack machine and spun up a server so the target machine can grab that file and execute it.
-![[AcademyServer.jpg]] ![[AcademyWGet.jpg]]![[AcademyWGet2.jpg]]
+
+![[AcademyServer.jpg]](images/AcademyServer.jpg)
+![[AcademyWGet.jpg]](images/AcademyWGet.jpg)
+![[AcademyWGet2.jpg]](images/AcademyWGet2.jpg)
+
 Running linPeas for a short while has stumbled upon some paths of privilege escalation.
-![[AcademyLinpeas3.jpg]] ![[AcademyLinpeas4.jpg]]
+![[AcademyLinpeas3.jpg]](images/AcademyLinpeas3.jpg)
+![[AcademyLinpeas4.jpg]](images/AcademyLinpeas4.jpg)
+
 There's a ton of information that was returned from linPeas but these are the most notable. An admin account for 'grimmie' and an password with it. There's also a 'backup.sh' file that could be of use. Let's try logging on.
 
 ## SSH
 
-![[AcademySSH3.jpg]]
-![[AcademySSH.jpg]]
+![[AcademySSH3.jpg]](images/AcademySSH3.jpg)
+![[AcademySSH.jpg]](images/AcademySSH.jpg)
+
 After logging in as `grimmie`, I've noticed that either sudo has been disabled or it's not functioning properly. Taking a look at the `backup.sh` file, I can deduce that this backs up the Academy. It could be running periodically via some sort of automation. I was unable to identify any cron tasks in linPEAS for this, nor did I find any scheduled jobs when I ran `crontab -l`.
 
 ## pspy
@@ -115,16 +141,26 @@ After logging in as `grimmie`, I've noticed that either sudo has been disabled o
 `pspy` is a command-line tool that captures processes and activity in real-time, without needing root permissions. I use this to check if the backup process is running.
 
 After downloading `pspy` to my attack machine, I get the target machine to grab it via the same web server I used earlier.
-![[AcademySSH2.jpg]]
-![[AcademyCronJob.jpg]]
-It was able to fine the backup running, around every minute or so. Now that I can confirm that it's been running, let's go back to the "grimmie" account to see if I can use this to run a reverse shell.
-## Reverse Shell
-I've set up a listener port on the attack machine using port 8080. Next, I will change the backup.sh file by deleting the contents and modifying it to a bash reverse shell one liner.![[AcademySSH 1.jpg]]![[AcademyBashRShell.jpg]]
-Saved the changes, this script is going to run about every minute or so as root, going back to my attack machine.
-![[AcademyFlag.jpg]]
-And there's the flag!
-# Trophy & Loot
 
+![[AcademySSH2.jpg]](images/AcademySSH2.jpg)
+![[AcademyCronJob.jpg]](images/AcademyCronJob.jpg)
+
+It was able to fine the backup running, around every minute or so. Now that I can confirm that it's been running, let's go back to the "grimmie" account to see if I can use this to run a reverse shell.
+
+## Reverse Shell
+
+I've set up a listener port on the attack machine using port 8080. Next, I will change the backup.sh file by deleting the contents and modifying it to a bash reverse shell one liner.
+
+![[AcademySSH.jpg]](images/AcademySSH.jpg)
+![[AcademyBashRShell.jpg]](images/AcademyBashRShell.jpg)
+
+Saved the changes, this script is going to run about every minute or so as root, going back to my attack machine.
+
+![[AcademyFlag.jpg]](images/AcademyFlag.jpg)
+
+And there's the flag!
+
+# Trophy & Loot
 - user.txt
 - root.txt
 - "cd73502828457d15655bbd7a63fb0bc8:student"
