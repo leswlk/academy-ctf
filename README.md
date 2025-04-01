@@ -1,16 +1,4 @@
-```
-Alias: Academy
-Date: 3/31/2025
-Platform: Linux/Debian
-Category:
-Difficulty: Easy
-Tags:
-Status:
-Creds: root/tcm
-IP: 10.211.55.7/24, 10.211.55.8/24
-```
-
-# Resolution Summary
+# Summary
 - This is a technical walkthrough of the Academy machine from (HTB). This is a great box to practice scanning and enumeration techniques, reverse shell, and privilege escalation all wrapped into a CTF format.
 # Tools Used
 - dirbuster
@@ -104,7 +92,7 @@ After clicking around, I found a "Profile" tab that allows users to upload their
 
 ## Reverse Shell
 I grabbed a PHP reverse shell from pentestmonkey and configured it with my attack IP and port `7777`. By default, the port shows as '1234' but just to be a bit more conscious of the environment I've chosen a different number. Once the reverse shell is ready, I set up a listener on port `7777` on my attack machine, waiting for the connection.
-
+![[AcademyReverseShell3.jpg]](images/AcademyReverseShell3.jpg)
 
 Next, I visit the Academy site again and upload the PHP shell file.
 ![[AcademyReverseShell2.jpg]](images/AcademyReverseShell2.jpg)
